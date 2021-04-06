@@ -160,7 +160,6 @@ def get_nearby_places(site_object):
     '''
     params = {'key': secrets.API_KEY, 'origin': site_object.zipcode, 'radius': 10, 'maxMatches': 10,
               'ambiguities': "ignore", 'outFormat': "json"}
-
     url = "http://www.mapquestapi.com/search/v2/radius"
     page = requests.get(url, params)
     return json.loads(page.text)
@@ -209,7 +208,7 @@ def interactive():
         abbreviations =build_state_url_dict()
         if command == "exit":
             return
-        elif command not in abbreviations.keys():
+        elif command.lower() not in abbreviations.keys():
             print("[Error] Enter proper state name")
             continue
         else:
@@ -228,12 +227,57 @@ def interactive():
                     site_urls.append(site_url)
                     print("Fetching")
                 CACHE_DICTION[command] = {}
-                CACHE_DICTION[command]["statelist_info"] = statelist_info
+                CACHE_DICTION[command]["info"] = statelist_info
                 CACHE_DICTION[command]["site_urls"] = site_urls
                 #save cache:
                 dumped_json_cache = json.dumps(CACHE_DICTION)
                 fw = open(CACHE_FNAME, "w")
                 fw.write(dumped_json_cache)
                 fw.close()
+                #save cache end
+                print("-"*30)
+                print("List of national sites in " + command)
+                print("-" * 30)
+                for i in range(len(statelist_info)):
+                    print("[" + str(i + 1) + "]" + statelist_info[i])
+                while True:
+                    detailnum = input("Choose the number for detail search or \"exit\" or \"back\" ")
+                    if (detailnum == "exit"):
+                        break
+                    elif (detailnum == "back"):
+                        interactive()
+                        break
+                    elif (int(detailnum) > 0 and int(detailnum) <= len(CACHE_DICTION[command]["info"])):
+                        siteobject = get_site_instance(CACHE_DICTION[command]["site_urls"][int(detailnum) - 1])
+                        try:
+                            nearby_place = CACHE_DICTION[command][siteobject.name]
+                            print("Using cache")
+
+                        except:
+                            CACHE_DICTION[command][siteobject.name] = {}
+                            nearby_place = get_nearby_places(siteobject)
+                            CACHE_DICTION[command][siteobject.name] = nearby_place["searchResults"]
+                            dumped_json_cache = json.dumps(CACHE_DICTION)
+                            fw = open(CACHE_FNAME, "w")
+                            fw.write(dumped_json_cache)
+                            fw.close()
+                            print("Fetching")
+                        print("---------------------------------------")
+                        print("Places near " + siteobject.name)
+                        print("---------------------------------------")
+                        for i in CACHE_DICTION[command][siteobject.name]:
+                            if len(i["fields"]["group_sic_code_name_ext"]) == 0:
+                                i["fields"]["group_sic_code_name_ext"] = "no category"
+                            if len(i["fields"]["address"]) == 0:
+                                i["fields"]["address"] = "no address"
+                            if len(i["fields"]["city"]) == 0:
+                                i["fields"]["city"] = "no city"
+                            print("-" + i["name"] + " (" + i["fields"]["group_sic_code_name_ext"] + "): " + i["fields"][
+                                "address"] + ", " + i["fields"]["city"])
+                        continue
+                    else:
+                        print("[Error] Invalid input")
+                        continue
+                break
 if __name__ == "__main__":
     interactive()
