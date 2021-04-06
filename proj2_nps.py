@@ -215,6 +215,10 @@ def is_valid(choose_num, len):
         return False
     return True
 
+def storeToDict(site_for_state,state,CACHE_DICTION,info,site_urls):
+    CACHE_DICTION[state] = {}
+    CACHE_DICTION[state]["info"] = info
+    CACHE_DICTION[state]["site_urls"] = site_urls
 
 def interactive():
     while True:
@@ -232,18 +236,15 @@ def interactive():
                     print('Using Cache')
             except:
                 info = []
-                site_urls = []
-                url = abbreviations[command]
+                site_url_list = []
+                url = build_state_url_dict()[command]
                 sites_for_state = get_sites_for_state(url)
                 for i in sites_for_state:
-                    site_url = i.url
                     info.append(i.info())
-                    site_urls.append(site_url)
+                    site_url_list.append(i.url)
                     print("Fetching")
                 # cache
-                CACHE_DICTION[command] = {}
-                CACHE_DICTION[command]["info"] = info
-                CACHE_DICTION[command]["site_urls"] = site_urls
+                storeToDict(sites_for_state, command, CACHE_DICTION, info, site_url_list)
                 # save cache:
                 dumped_json_cache = json.dumps(CACHE_DICTION)
                 fw = open(CACHE_FNAME, "w")
