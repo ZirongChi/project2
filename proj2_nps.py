@@ -1,15 +1,16 @@
 #################################
-##### Name:
-##### Uniqname:
+##### Name:Zirong Chi
+##### Uniqname:zirongch
 #################################
 
 from bs4 import BeautifulSoup
 import requests
 import json
-import secrets # file that contains your API key
+import secrets  # file that contains your API key
 
 abbreviations = {'al': 'Alabama', 'ak': 'Alaska', 'as': 'American Samoa', 'az': 'Arizona', 'ar': 'Arkansas',
-                 'ca': 'California', 'co': 'Colorado', 'ct': 'Connecticut', 'de': 'Delaware', 'dc': 'District of Columbia',
+                 'ca': 'California', 'co': 'Colorado', 'ct': 'Connecticut', 'de': 'Delaware',
+                 'dc': 'District of Columbia',
                  'fl': 'Florida', 'ga': 'Georgia', 'gu': 'Guam', 'hi': 'Hawaii', 'id': 'Idaho', 'il': 'Illinois',
                  'in': 'Indiana', 'ia': 'Iowa', 'ks': 'Kansas', 'ky': 'Kentucky', 'la': 'Louisiana', 'me': 'Maine',
                  'md': 'Maryland', 'ma': 'Massachusetts', 'mi': 'Michigan', 'mn': 'Minnesota', 'ms': 'Mississippi',
@@ -21,7 +22,6 @@ abbreviations = {'al': 'Alabama', 'ak': 'Alaska', 'as': 'American Samoa', 'az': 
                  'va': 'Virginia', 'wa': 'Washington', 'wv': 'West Virginia', 'wi': 'Wisconsin', 'wy': 'Wyoming'}
 
 
-
 class NationalSite():
     '''a national site
 
@@ -30,7 +30,7 @@ class NationalSite():
     category: string
         the category of a national site (e.g. 'National Park', '')
         some sites have blank category.
-    
+
     name: string
         the name of a national site (e.g. 'Isle Royale')
 
@@ -43,15 +43,17 @@ class NationalSite():
     phone: string
         the phone of a national site (e.g. '(616) 319-7906', '307-344-7381')
     '''
-    def __init__(self, category, name, address,zipcode, phone,url):
+
+    def __init__(self, category, name, address, zipcode, phone, url):
         self.category = category
         self.name = name
         self.address = address
         self.zipcode = zipcode
         self.phone = phone
         self.url = url
+
     def info(self):
-        return (self.name + " (" + self.category + "): " + self.address + " " + self.zipcode)
+        return self.name + " (" + self.category + "): " + self.address + " " + self.zipcode
 
     pass
 
@@ -83,12 +85,12 @@ def build_state_url_dict():
 
 def get_site_instance(site_url):
     '''Make an instances from a national site URL.
-    
+
     Parameters
     ----------
     site_url: string
         The URL for a national site page in nps.gov
-    
+
     Returns
     -------
     instance
@@ -99,32 +101,28 @@ def get_site_instance(site_url):
         detail_soup = BeautifulSoup(detail_text, 'html.parser')
         name = detail_soup.find('a', class_="Hero-title").text
         category = detail_soup.find('span', class_='Hero-designation').text
-        if category is None:
-            category = "no category"
+        category = "no category" if category is None else category
         address1 = detail_soup.find('span', itemprop='addressLocality').text
-        if address1 is None:
-            address1 = "no local address"
+        address1 = "no local address" if address1 is None else address1
         address2 = detail_soup.find('span', itemprop='addressRegion').text
-        if address2 is None:
-            address2 = "no regional address"
+        address2 = "no regional address" if address2 is None else address2
         address = address1 + ", " + address2
         zipcode = detail_soup.find('span', itemprop='postalCode').text.strip()
-        if zipcode is None:
-            zipcode = "no zipcode"
+        zipcode = "no zipcode" if zipcode is None else zipcode
         phone = detail_soup.find('span', itemprop='telephone').text.strip()
-        if phone is None:
-            phone = "no phone"
+        phone = "no phone" if zipcode is None else phone
         instance = NationalSite(category, name, address, zipcode, phone, site_url)
     return instance
 
+
 def get_sites_for_state(state_url):
     '''Make a list of national site instances from a state URL.
-    
+
     Parameters
     ----------
     state_url: string
         The URL for a state page in nps.gov
-    
+
     Returns
     -------
     list
@@ -132,8 +130,8 @@ def get_sites_for_state(state_url):
     '''
     state_text = requests.get(state_url)
     state_soup = BeautifulSoup(state_text.text, 'html.parser')
-    park_list = state_soup.find('ul',id='list_parks')
-    sites_content = park_list.find_all('li',class_='clearfix')
+    park_list = state_soup.find('ul', id='list_parks')
+    sites_content = park_list.find_all('li', class_='clearfix')
     sites_list = []
     for s in sites_content:
         site_name = s.find('h3')
@@ -147,12 +145,12 @@ def get_sites_for_state(state_url):
 
 def get_nearby_places(site_object):
     '''Obtain API data from MapQuest API.
-    
+
     Parameters
     ----------
     site_object: object
         an instance of a national site
-    
+
     Returns
     -------
     dict
@@ -163,6 +161,7 @@ def get_nearby_places(site_object):
     url = "http://www.mapquestapi.com/search/v2/radius"
     page = requests.get(url, params)
     return json.loads(page.text)
+
 
 CACHE_FNAME = 'proj2_cache.json'
 try:
@@ -175,8 +174,10 @@ try:
 except:
     CACHE_DICTION = {}
 
+
 def get_unique_key(url):
     return url
+
 
 def make_request_using_cache(url):
     unique_ident = get_unique_key(url)
@@ -200,84 +201,93 @@ def make_request_using_cache(url):
         fw.close()  # Close the open file
         return CACHE_DICTION[unique_ident]
 
+
+def print_with_delimiter(str):
+    print("-" * 35)
+    print(str)
+    print("-" * 35)
+
+
+def is_valid(choose_num, len):
+    if int(choose_num) < 0:
+        return False
+    if int(choose_num) > len:
+        return False
+    return True
+
+
 def interactive():
     while True:
         site_results = []
         command = input(f'\nEnter a state name (e.g. Michigan, michigan) or "exit": ')
-        words = command.split()
-        abbreviations =build_state_url_dict()
         if command == "exit":
             return
-        elif command.lower() not in abbreviations.keys():
+        elif command.lower() not in build_state_url_dict():
             print("[Error] Enter proper state name")
             continue
         else:
             try:
-                info = CACHE_DICTION[command]["state_info"]
+                info = CACHE_DICTION[command]["info"]
                 for i in info:
                     print('Using Cache')
             except:
-                stateurl = abbreviations[command]
-                statelist = get_sites_for_state(stateurl)
-                statelist_info = []
+                info = []
                 site_urls = []
-                for i in statelist:
+                url = abbreviations[command]
+                sites_for_state = get_sites_for_state(url)
+                for i in sites_for_state:
                     site_url = i.url
-                    statelist_info.append(i.info())
+                    info.append(i.info())
                     site_urls.append(site_url)
                     print("Fetching")
+                # cache
                 CACHE_DICTION[command] = {}
-                CACHE_DICTION[command]["info"] = statelist_info
+                CACHE_DICTION[command]["info"] = info
                 CACHE_DICTION[command]["site_urls"] = site_urls
-                #save cache:
+                # save cache:
                 dumped_json_cache = json.dumps(CACHE_DICTION)
                 fw = open(CACHE_FNAME, "w")
                 fw.write(dumped_json_cache)
                 fw.close()
-                #save cache end
-                print("-"*30)
-                print("List of national sites in " + command)
-                print("-" * 30)
-                for i in range(len(statelist_info)):
-                    print("[" + str(i + 1) + "]" + statelist_info[i])
-                while True:
-                    detailnum = input("Choose the number for detail search or \"exit\" or \"back\" ")
-                    if (detailnum == "exit"):
-                        break
-                    elif (detailnum == "back"):
-                        interactive()
-                        break
-                    elif (int(detailnum) > 0 and int(detailnum) <= len(CACHE_DICTION[command]["info"])):
-                        siteobject = get_site_instance(CACHE_DICTION[command]["site_urls"][int(detailnum) - 1])
-                        try:
-                            nearby_place = CACHE_DICTION[command][siteobject.name]
-                            print("Using cache")
-
-                        except:
-                            CACHE_DICTION[command][siteobject.name] = {}
-                            nearby_place = get_nearby_places(siteobject)
-                            CACHE_DICTION[command][siteobject.name] = nearby_place["searchResults"]
-                            dumped_json_cache = json.dumps(CACHE_DICTION)
-                            fw = open(CACHE_FNAME, "w")
-                            fw.write(dumped_json_cache)
-                            fw.close()
-                            print("Fetching")
-                        print("---------------------------------------")
-                        print("Places near " + siteobject.name)
-                        print("---------------------------------------")
-                        for i in CACHE_DICTION[command][siteobject.name]:
-                            if len(i["fields"]["group_sic_code_name_ext"]) == 0:
-                                i["fields"]["group_sic_code_name_ext"] = "no category"
-                            if len(i["fields"]["address"]) == 0:
-                                i["fields"]["address"] = "no address"
-                            if len(i["fields"]["city"]) == 0:
-                                i["fields"]["city"] = "no city"
-                            print("-" + i["name"] + " (" + i["fields"]["group_sic_code_name_ext"] + "): " + i["fields"][
-                                "address"] + ", " + i["fields"]["city"])
+                # save cache end
+            print_with_delimiter("List of national sites in " + command)
+            for i in range(len(info)):
+                print("[" + str(i + 1) + "]" + info[i])
+            while True:
+                choose_num = input("Choose the number for detail search or \"exit\" or \"back\" ")
+                if choose_num == "exit":
+                    return
+                elif choose_num == "back":
+                    interactive()
+                    break
+                elif is_valid(choose_num, len(CACHE_DICTION[command]["info"])):
+                    site_instance = get_site_instance(CACHE_DICTION[command]["site_urls"][int(choose_num) - 1])
+                    try:
+                        nearby_place = CACHE_DICTION[command][site_instance.name]
+                        print("Using cache")
+                    except:
+                        CACHE_DICTION[command][site_instance.name] = {}
+                        nearby_place = get_nearby_places(site_instance)
+                        CACHE_DICTION[command][site_instance.name] = nearby_place["searchResults"]
+                        dumped_json_cache = json.dumps(CACHE_DICTION)
+                        fw = open(CACHE_FNAME, "w")
+                        fw.write(dumped_json_cache)
+                        fw.close()
+                        print("Fetching")
+                    print_with_delimiter("Places near " + site_instance.name)
+                    for i in CACHE_DICTION[command][site_instance.name]:
+                        category = "no category" if i["fields"]["group_sic_code_name_ext"] == '' else i["fields"][
+                            "group_sic_code_name_ext"]
+                        address = "no address" if i["fields"]["address"] == '' else i["fields"]["address"]
+                        city = "no city" if i["fields"]["city"] == '' else i["fields"]["city"]
+                        name = i["name"]
+                        print("-" + name + " (" + category + "): " + address + ", " + city)
                         continue
-                    else:
-                        print("[Error] Invalid input")
-                        continue
+                else:
+                    print("[Error]")
+                    continue
                 break
+
+
 if __name__ == "__main__":
     interactive()
